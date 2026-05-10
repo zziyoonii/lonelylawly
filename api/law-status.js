@@ -17,6 +17,10 @@ module.exports = async (req, res) => {
       path,
       method: 'GET',
       timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; LawFormBot/1.0)',
+        'Accept': 'application/json',
+      },
     }, (r) => {
       let data = '';
       r.setEncoding('utf8');
