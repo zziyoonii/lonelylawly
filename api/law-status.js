@@ -1,44 +1,33 @@
-const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-module.exports = async (req, res) => {
+module.exports = (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
-  const oc = process.env.LAW_API_OC;
-  if (!oc) {
-    return res.status(200).json({ ocConfigured: false, connected: false });
+  const ocConfigured = !!process.env.LAW_API_OC;
+
+  let cacheData = null;
+  try {
+    const cacheFile = path.join(__dirname, '..', 'lib', 'law-data-cache.json');
+    cacheData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+  } catch {
+    // 캐시 파일 없음
   }
 
-  const path = `/DRF/lawSearch.do?OC=${encodeURIComponent(oc)}&target=law&type=JSON&query=${encodeURIComponent('개인정보보호법')}&display=3&sort=efdes`;
-
-  const rawResponse = await new Promise((resolve) => {
-    const reqHttp = https.request({
-      hostname: 'www.law.go.kr',
-      path,
-      method: 'GET',
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; LawFormBot/1.0)',
-        'Accept': 'application/json',
-      },
-    }, (r) => {
-      let data = '';
-      r.setEncoding('utf8');
-      r.on('data', chunk => { data += chunk; });
-      r.on('end', () => resolve({ status: r.statusCode, body: data.substring(0, 500) }));
+  if (!cacheData) {
+    return res.status(200).json({
+      ocConfigured,
+      cacheBuilt: false,
+      message: '빌드 캐시 없음. LAW_API_OC 설정 후 Vercel 재배포 필요',
     });
-    reqHttp.on('timeout', () => { reqHttp.destroy(); resolve({ status: 'timeout', body: '' }); });
-    reqHttp.on('error', (e) => resolve({ status: 'error', body: e.message }));
-    reqHttp.end();
-  });
-
-  let parsed = null;
-  try { parsed = JSON.parse(rawResponse.body); } catch {}
+  }
 
   res.status(200).json({
-    ocConfigured: true,
-    httpStatus: rawResponse.status,
-    rawPreview: rawResponse.body,
-    parsed: parsed ? '파싱 성공' : '파싱 실패',
+    ocConfigured,
+    cacheBuilt: true,
+    builtAt: cacheData.builtAt,
+    hasData: !!cacheData.summary,
+    preview: cacheData.summary ? cacheData.summary.substring(0, 300) : '데이터 없음 (빌드 시 LAW_API_OC 오류)',
   });
 };
