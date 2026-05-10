@@ -1,6 +1,6 @@
 /**
  * 로컬 전용 법령 본문 갱신 스크립트
- * 실행: node scripts/fetch-laws.js
+ * 실행: npm run fetch-laws
  * 필요: .env 파일에 LAW_API_OC 설정
  */
 
@@ -8,7 +8,14 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+// .env 파일 직접 읽기 (dotenv 패키지 없이)
+try {
+  const envFile = fs.readFileSync(path.join(__dirname, '..', '.env'), 'utf8');
+  envFile.split('\n').forEach(line => {
+    const [key, ...vals] = line.trim().split('=');
+    if (key && vals.length) process.env[key] = vals.join('=');
+  });
+} catch { /* .env 없으면 환경변수에서 직접 읽음 */ }
 
 const OC = process.env.LAW_API_OC;
 if (!OC) {
