@@ -4,7 +4,8 @@
   "description": "우리 회사 AI Compliance Team - 이용약관·개인정보처리방침 AI 준법 검토",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "fetch-laws": "node scripts/fetch-laws.js"
   },
   "dependencies": {
     "jsonrepair": "^3.13.0"
