@@ -73,26 +73,33 @@ function extractArticles(lawJson, lawName) {
   if (!lawJson) return '';
 
   const keyList = KEY_ARTICLES[lawName] || [];
-  const articles = lawJson?.law?.조문?.조문내용 ?? lawJson?.법령?.조문?.조문내용 ?? [];
+  const articles = lawJson?.법령?.조문?.조문단위 ?? lawJson?.law?.조문?.조문단위 ?? [];
   const arr = Array.isArray(articles) ? articles : [articles];
 
-  const filtered = arr.filter(a => {
-    const title = a?.조문제목 ?? a?.조문번호 ?? '';
-    return keyList.some(k => title.includes(k.replace('제', '').replace('조', '')));
-  });
+  // 장/절 헤더 제외, 실제 조문만
+  const onlyArticles = arr.filter(a => a?.조문여부 === '조문');
 
-  if (filtered.length === 0) {
-    return arr.slice(0, 10).map(formatArticle).join('\n\n');
+  if (keyList.length === 0) {
+    return onlyArticles.slice(0, 10).map(formatArticle).join('\n\n');
   }
 
-  return filtered.map(formatArticle).join('\n\n');
+  const filtered = onlyArticles.filter(a => {
+    const num = String(a?.조문번호 ?? '');
+    return keyList.some(k => {
+      // '제15조' → '15', '제14조의2' → '14의2'
+      const keyNum = k.replace('제', '').replace('조', '');
+      return num === keyNum;
+    });
+  });
+
+  return (filtered.length > 0 ? filtered : onlyArticles.slice(0, 10)).map(formatArticle).join('\n\n');
 }
 
 function formatArticle(a) {
   const num = a?.조문번호 ?? '';
-  const title = a?.조문제목 ?? '';
-  const content = a?.조문내용 ?? a?.조항내용 ?? '';
-  return `${num} ${title}\n${content}`.trim();
+  const title = a?.조문제목 ? `(${a.조문제목})` : '';
+  const content = a?.조문내용 ?? '';
+  return `제${num}조${title} ${content}`.trim();
 }
 
 async function main() {
