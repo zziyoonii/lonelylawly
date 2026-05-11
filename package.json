@@ -1,7 +1,7 @@
 {
   "name": "lawform",
   "version": "1.0.0",
-  "description": "우리 회사 AI Compliance Team - 이용약관·개인정보처리방침 AI 준법 검토",
+  "description": "lownlylawly — 법무팀 없는 당신을 위한 AI 준법 검토",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
