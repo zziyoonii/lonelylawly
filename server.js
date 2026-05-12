@@ -355,13 +355,13 @@ const server = http.createServer(async (req, res) => {
   const pathname = (parsed.pathname || '').split('?')[0];
   if (pathname === '/favicon.ico') {
     const faviconPath = path.join(publicDir, 'favicon.ico');
-    const fallbackPath = path.join(imgDir, 'character.png');
-    const src = fs.existsSync(faviconPath) ? faviconPath : fallbackPath;
-    if (fs.existsSync(src)) {
-      res.writeHead(200, { 'Content-Type': 'image/png' });
-      res.end(fs.readFileSync(src));
+    if (fs.existsSync(faviconPath)) {
+      res.writeHead(200, { 'Content-Type': 'image/x-icon' });
+      res.end(fs.readFileSync(faviconPath));
       return;
     }
+    res.writeHead(404); res.end();
+    return;
   }
   if (pathname.startsWith('/images/')) {
     const relPath = pathname.slice('/images/'.length).replace(/\.\./g, '');
