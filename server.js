@@ -295,6 +295,7 @@ ${ppExtracted}`;
     generationConfig: {
       temperature: 0.2,
       maxOutputTokens: 8192,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
