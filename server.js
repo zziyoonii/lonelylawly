@@ -295,6 +295,7 @@ ${ppExtracted}`;
     generationConfig: {
       temperature: 0.2,
       maxOutputTokens: 8192,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
@@ -303,7 +304,7 @@ ${ppExtracted}`;
   return new Promise((resolve, reject) => {
     const req = https.request({
       hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      path: `/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
