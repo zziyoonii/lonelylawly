@@ -33,7 +33,7 @@ html = html.replace(/\{\{TOSS_TRANSFER_LINK\}\}/g, tossLink);
 fs.writeFileSync(indexPath, html);
 
 // robots.txt, sitemap.xml 생성
-const base = canonicalUrl || 'https://lawform-beta.vercel.app';
+const base = canonicalUrl || 'https://lonelylawly.vercel.app';
 fs.writeFileSync(
   path.join(publicDir, 'robots.txt'),
   `User-agent: *\nAllow: /\nSitemap: ${base}/sitemap.xml\n`

@@ -1,6 +1,21 @@
 const { callGemini } = require('../lib/gemini');
 const { jsonrepair } = require('jsonrepair');
 
+const rateLimit = new Map();
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000;
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimit.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimit.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -15,6 +30,12 @@ module.exports = async (req, res) => {
     return;
   }
 
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+  if (!checkRateLimit(ip)) {
+    res.status(429).json({ error: '요청이 너무 많습니다. 1시간 후 다시 시도해주세요.' });
+    return;
+  }
+
   let body;
   try {
     body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
@@ -23,11 +44,13 @@ module.exports = async (req, res) => {
     return;
   }
 
-  const { tosText, ppText, plan } = body;
+  let { tosText, ppText, plan } = body;
   if (!plan) {
     res.status(400).json({ error: '기획안이 없습니다' });
     return;
   }
+
+  if (plan.length > 5000) plan = plan.substring(0, 5000);
 
   try {
     const raw = await callGemini(tosText || '', ppText || '', plan);
