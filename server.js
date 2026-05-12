@@ -28,6 +28,22 @@ const PORT = process.env.PORT || 3001;
 const urlCache = new Map();
 const CACHE_TTL = 60 * 60 * 1000;
 
+// ── IP별 요청 제한 (시간당 5회)
+const rateLimit = new Map();
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000;
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimit.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimit.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
 function getCached(key) {
   const item = urlCache.get(key);
   if (!item) return null;
@@ -434,12 +450,23 @@ const server = http.createServer(async (req, res) => {
 
   // ── 분석 API: POST /analyze 또는 /api/analyze
   if ((parsed.pathname === '/analyze' || parsed.pathname === '/api/analyze') && req.method === 'POST') {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    if (!checkRateLimit(ip)) {
+      res.writeHead(429, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: '요청이 너무 많습니다. 1시간 후 다시 시도해주세요.' }));
+      return;
+    }
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > 100 * 1024) { req.destroy(); }
+    });
     req.on('end', async () => {
       try {
-        const { tosText, ppText, plan } = JSON.parse(body);
+        if (body.length > 100 * 1024) throw new Error('요청 크기가 너무 큽니다 (최대 100KB)');
+        let { tosText, ppText, plan } = JSON.parse(body);
         if (!plan) throw new Error('기획안이 없습니다');
+        if (plan.length > 5000) plan = plan.substring(0, 5000);
 
         const lawText = await loadAllLaws();
         const raw = await callGemini(tosText || '', ppText || '', plan, lawText);
