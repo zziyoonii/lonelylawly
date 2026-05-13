@@ -434,11 +434,11 @@ const server = http.createServer(async (req, res) => {
     try {
       console.log(`[크롤링] ${targetUrl}`);
       const { fetchUrlWithFallback } = require('./lib/fetchUrl');
-      const text = await fetchUrlWithFallback(targetUrl);
+      const { text, source } = await fetchUrlWithFallback(targetUrl);
       setCache(targetUrl, text);
       console.log(`[완료] ${text.length.toLocaleString()}자 → 캐시 저장`);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ success: true, text, length: text.length, cached: false }));
+      res.end(JSON.stringify({ success: true, text, length: text.length, source, cached: false }));
     } catch(e) {
       console.error(`[크롤링 오류] ${e.message}`);
       res.writeHead(500, { 'Content-Type': 'application/json' });

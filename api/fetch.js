@@ -21,8 +21,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const text = await fetchUrlWithFallback(targetUrl);
-    res.status(200).json({ success: true, text, length: text.length, cached: false });
+    const { text, source } = await fetchUrlWithFallback(targetUrl);
+    res.status(200).json({ success: true, text, length: text.length, source, cached: false });
   } catch (e) {
     console.error('[크롤링 오류]', e.message);
     res.status(500).json({ error: e.message });
