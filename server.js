@@ -435,8 +435,8 @@ const server = http.createServer(async (req, res) => {
 
     try {
       console.log(`[크롤링] ${targetUrl}`);
-      const html = await fetchUrl(targetUrl);
-      const text = htmlToText(html);
+      const { fetchUrlWithFallback } = require('./lib/fetchUrl');
+      const text = await fetchUrlWithFallback(targetUrl);
       setCache(targetUrl, text);
       console.log(`[완료] ${text.length.toLocaleString()}자 → 캐시 저장`);
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });

@@ -1,4 +1,4 @@
-const { fetchUrl, htmlToText } = require('../lib/fetchUrl');
+const { fetchUrlWithFallback } = require('../lib/fetchUrl');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,8 +21,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const html = await fetchUrl(targetUrl);
-    const text = htmlToText(html);
+    const text = await fetchUrlWithFallback(targetUrl);
     res.status(200).json({ success: true, text, length: text.length, cached: false });
   } catch (e) {
     console.error('[크롤링 오류]', e.message);
