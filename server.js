@@ -2,7 +2,6 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 const { jsonrepair } = require('jsonrepair');
 
 // ── .env 파일 자동 로드 (npm 없이 직접 파싱)
@@ -348,12 +347,11 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
-  const parsed = url.parse(req.url, true);
+  const parsed = new URL(req.url, 'http://localhost');
 
   // ── favicon & 이미지 (logo.png 등)
-  const imgDir = path.join(__dirname, 'image.png');
   const publicDir = path.join(__dirname, 'public');
-  const pathname = (parsed.pathname || '').split('?')[0];
+  const pathname = parsed.pathname;
   if (pathname === '/favicon.ico') {
     const faviconPath = path.join(publicDir, 'favicon.ico');
     if (fs.existsSync(faviconPath)) {
@@ -418,7 +416,7 @@ const server = http.createServer(async (req, res) => {
 
   // ── URL 크롤링 API: GET /fetch?url=... 또는 /api/fetch?url=...
   if ((parsed.pathname === '/fetch' || parsed.pathname === '/api/fetch') && req.method === 'GET') {
-    const targetUrl = parsed.query.url;
+    const targetUrl = parsed.searchParams.get('url');
     if (!targetUrl) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'url 파라미터가 필요합니다' }));
