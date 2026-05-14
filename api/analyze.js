@@ -1,4 +1,5 @@
 const { callGemini } = require('../lib/gemini');
+const { callClaude } = require('../lib/claude');
 const { jsonrepair } = require('jsonrepair');
 
 const rateLimit = new Map();
@@ -44,7 +45,7 @@ module.exports = async (req, res) => {
     return;
   }
 
-  let { tosText, ppText, plan } = body;
+  let { tosText, ppText, plan, model } = body;
   if (!plan) {
     res.status(400).json({ error: '기획안이 없습니다' });
     return;
@@ -53,7 +54,10 @@ module.exports = async (req, res) => {
   if (plan.length > 5000) plan = plan.substring(0, 5000);
 
   try {
-    const raw = await callGemini(tosText || '', ppText || '', plan);
+    const useModel = model === 'haiku' ? 'haiku' : 'gemini';
+    const raw = useModel === 'haiku'
+      ? await callClaude(tosText || '', ppText || '', plan)
+      : await callGemini(tosText || '', ppText || '', plan);
 
     const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     const match = cleaned.match(/\{[\s\S]*\}/);
